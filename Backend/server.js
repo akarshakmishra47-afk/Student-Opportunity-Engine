@@ -69,7 +69,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 
-const mongoURI = process.env.MONGO_URI ? process.env.MONGO_URI.trim() : null;
+const mongoURI = (process.env.MONGO_URI || process.env.MONGODB_URI || '').trim() || null;
 
 if (!mongoURI) {
   console.error("❌ ERROR: MONGO_URI is missing in your .env file!");
@@ -91,6 +91,9 @@ mongoose.connect(mongoURI)
   .catch(err => {
     console.error('❌ Database Connection Error:');
     console.error(err.message);
+    if (require.main === module) {
+      process.exit(1);
+    }
   });
 
 if (require.main === module) {
