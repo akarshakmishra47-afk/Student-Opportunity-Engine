@@ -27,9 +27,9 @@
     html,
     body {
       height: 100%;
-      background: #111827;
+      background: #F9FAFB;
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      color: #F3F4F6;
+      color: #1A1A1A;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -43,7 +43,7 @@
     }
 
     ::-webkit-scrollbar-track {
-      background: #374151;
+      background: #F5F5F5;
     }
 
     ::-webkit-scrollbar-thumb {
@@ -408,14 +408,14 @@
       width: 100%;
       height: 100vh;
       overflow: hidden;
-      background: #111827;
+      background: #FAFAFA;
     }
 
     /* ── SIDEBAR ── */
     .vs-sidebar {
       width: var(--sidebar-w);
       background: #1a1a2e;
-      border-right: 1px solid #E8E8E8;
+      border-right: 1px solid #2A2A3A;
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
@@ -444,7 +444,7 @@
       width: 40px;
       height: 40px;
       border-radius: 11px;
-      background: linear-gradient(145deg, #1A1A1A 0%, #0D0D0D 100%);
+      background: #111111;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -453,21 +453,14 @@
       font-size: 12px;
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
       flex-shrink: 0;
-      box-shadow: 0 4px 18px rgba(16, 185, 129, 0.25), 0 0 0 1.5px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      box-shadow: none;
+      border: 1.5px solid #10b981;
       position: relative;
       overflow: hidden;
     }
 
     .brand-logo::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: conic-gradient(from 0deg, transparent, rgba(16, 185, 129, 0.15), transparent, rgba(255, 199, 0, 0.1), transparent);
-      animation: logoBorderSpin 6s linear infinite;
-      pointer-events: none;
+      display: none;
     }
 
     @keyframes logoBorderSpin {
@@ -483,10 +476,6 @@
       line-height: 1;
       color: #fff;
       letter-spacing: -0.4px;
-      background: linear-gradient(135deg, #FFFFFF 30%, #6ee7b7 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
     }
 
     .brand-text-sub {
@@ -541,9 +530,9 @@
     }
 
     .sidebar-nav-item.active {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.07));
+      background: transparent;
       color: #fff;
-      border-color: rgba(16, 185, 129, 0.35);
+      border-color: #10b981;
       font-weight: 700;
     }
 
@@ -598,7 +587,7 @@
       width: 34px;
       height: 34px;
       border-radius: 8px;
-      background: linear-gradient(135deg, #10b981, #059669);
+      background: #10b981;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -634,10 +623,10 @@
     /* ── HEADER ── */
     .vs-header {
       height: var(--header-h);
-      background: rgba(31, 41, 55, 0.98);
+      background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid #374151;
+      border-bottom: 1px solid #EBEBEB;
       display: flex;
       align-items: center;
       padding: 0 32px;
@@ -659,7 +648,7 @@
       max-width: 520px;
       display: flex;
       align-items: center;
-      background: #374151;
+      background: #F5F5F5;
       border-radius: 10px;
       padding: 9px 14px;
       border: 1.5px solid #EBEBEB;
@@ -669,13 +658,13 @@
 
     .header-search-wrap:focus-within {
       border-color: #10b98188;
-      background: #1f2937;
+      background: #fff;
     }
 
     .header-search-input {
       background: transparent;
       border: none;
-      color: #F3F4F6;
+      color: #1A1A1A;
       font-size: 14px;
       width: 100%;
       outline: none;
@@ -695,9 +684,9 @@
 
     .mobile-menu-btn {
       display: none;
-      background: #374151;
+      background: #F5F5F5;
       border: 1.5px solid #EBEBEB;
-      color: #9ca3af;
+      color: #555;
       border-radius: 8px;
       width: 36px;
       height: 36px;
@@ -718,12 +707,12 @@
       flex: 1;
       overflow-y: auto;
       position: relative;
-      background: #111827;
+      background: #FAFAFA;
     }
 
     /* ── SCREEN STRUCTURE ── */
     .screen-hero {
-      background: linear-gradient(158deg, #1f2937 0%, #111827 52%, #1a1a2e 100%);
+      background: #FAFAFB;
       border-bottom: 1px solid #EBEBEB;
       padding: 36px 44px;
       position: relative;
@@ -731,15 +720,7 @@
     }
 
     .screen-hero::before {
-      content: '';
-      position: absolute;
-      top: -80px;
-      right: -80px;
-      width: 280px;
-      height: 280px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%);
-      pointer-events: none;
+      display: none;
     }
 
     .screen-hero-inner {
@@ -857,7 +838,7 @@
     }
 
     .modal-sheet {
-      background: #1f2937;
+      background: #FFFFFF;
       border-radius: 24px 24px 0 0;
       width: 100%;
       max-width: 520px;
@@ -875,7 +856,7 @@
 
       .modal-sheet.above-nav-sheet {
         border-radius: 24px;
-        border: 1px solid #374151;
+        border: 1px solid #EBEBEB;
       }
     }
 
@@ -888,7 +869,7 @@
       min-height: 100vh;
       display: flex;
       align-items: stretch;
-      background: #111827;
+      background: #FAFAFA;
     }
 
     .login-left {
@@ -911,7 +892,7 @@
       justify-content: center;
       padding: 48px 40px;
       border-left: 1px solid #EBEBEB;
-      background: #1f2937;
+      background: #FFFFFF;
     }
 
     /* ══════════════════════════════════
@@ -1603,7 +1584,7 @@
 
     /* ── ENHANCED SIDEBAR BRAND ── */
     .sidebar-brand {
-      background: linear-gradient(180deg, #171717 0%, #111 100%);
+      background: #1a1a2e;
       padding-bottom: 20px !important;
     }
 
@@ -1614,15 +1595,7 @@
     }
 
     .screen-hero::after {
-      content: '';
-      position: absolute;
-      bottom: -60px;
-      right: -60px;
-      width: 240px;
-      height: 240px;
-      border-radius: 50%;
-      background: rgba(255, 199, 0, 0.04);
-      pointer-events: none;
+      display: none;
     }
 
 
@@ -1696,8 +1669,9 @@
 
     /* ── SHIMMER BADGE ENHANCEMENT ── */
     .brand-logo-enhanced {
-      background: linear-gradient(145deg, #1A1A1A 0%, #0D0D0D 100%) !important;
-      box-shadow: 0 4px 18px rgba(16, 185, 129, 0.25), 0 0 0 1.5px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+      background: #111111 !important;
+      box-shadow: none !important;
+      border: 1.5px solid #10b981 !important;
     }
 
     /* ── IMPROVED SCROLLBAR ── */
@@ -1729,10 +1703,11 @@
     .brand-text-name {
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
       letter-spacing: -0.4px !important;
-      background: linear-gradient(135deg, #FFFFFF 30%, #6ee7b7 100%) !important;
-      -webkit-background-clip: text !important;
-      -webkit-text-fill-color: transparent !important;
-      background-clip: text !important;
+      color: #fff !important;
+      background: none !important;
+      -webkit-background-clip: unset !important;
+      -webkit-text-fill-color: #fff !important;
+      background-clip: unset !important;
     }
 
     /* ── BODY COPY IMPROVEMENT ── */
@@ -1885,7 +1860,7 @@
 
     /* ── PREMIUM SCREEN HERO ── */
     .screen-hero {
-      background: linear-gradient(155deg, #FFFFFF 0%, #FFF8F3 55%, #FFF3E6 100%) !important;
+      background: #FAFAFB !important;
     }
 
     /* ── ALERT / INFO BLOCK UTILITY ── */
@@ -1970,7 +1945,7 @@
     .form-input:focus {
       border-color: rgba(16, 185, 129, 0.50);
       box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.09);
-      background: #1f2937;
+      background: #FFFFFF;
     }
 
     .form-input::placeholder {
@@ -2233,12 +2208,11 @@ const safeRenderMarkdown = (text) => {
 
 const T = {
       orange: "#10B981", orangeLt: "#34D399", yellow: "#059669",
-      black: "#FFFFFF", white: "#1f2937", gray: "#374151",
-      border: "#374151", muted: "#9CA3AF", cardBg: "#1f2937",
+      black: "#111111", white: "#FFFFFF", gray: "#F5F5F5",
+      border: "#EBEBEB", muted: "#888888", cardBg: "#FFFFFF",
       success: "#10B981", rose: "#EF4444", indigo: "#6366F1",
-      teal: "#14B8A6", warn: "#F59E0B", text: "#F3F4F6",
+      teal: "#14B8A6", warn: "#F59E0B", text: "#1A1A1A",
       purple: "#9B6DFF",
-      /* Legacy aliases mapped to Emerald Pro */
       saffron: "#10B981", saffronLt: "#34D399", gold: "#059669",
       navy: "#1a1a2e", navyMid: "#1e1e38", navyLt: "#374151",
     };
@@ -2257,10 +2231,10 @@ const T = {
 
     const Btn = ({ children, onClick, variant = "primary", style = {}, disabled = false }) => {
       const V = {
-        primary: { background: `linear-gradient(135deg,#10b981 0%,#10b981 50%,#34d399 100%)`, color: "#fff", border: "none", boxShadow: "0 4px 18px rgba(16, 185, 129,0.32), 0 1px 4px rgba(0,0,0,0.08)" },
-        secondary: { background: "#F5F5F5", color: T.text, border: `1px solid #E2E2E2`, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" },
-        teal: { background: `linear-gradient(135deg,#14B8A6 0%,#0DD6C4 60%,#06B6AA 100%)`, color: "#fff", border: "none", boxShadow: "0 4px 16px rgba(20,184,166,0.28)" },
-        ghost: { background: "rgba(16, 185, 129,0.06)", color: T.orange, border: `1px solid rgba(16, 185, 129,0.28)` },
+        primary: { background: "#10b981", color: "#fff", border: "none", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" },
+        secondary: { background: "#F5F5F5", color: T.text, border: `1px solid #E2E2E2`, boxShadow: "none" },
+        teal: { background: "#10b981", color: "#fff", border: "none", boxShadow: "none" },
+        ghost: { background: "#fff", color: T.orange, border: `1px solid #10b981` },
       };
       return (
         <button className="btn-press ripple-btn" onClick={onClick} disabled={disabled}
@@ -3219,7 +3193,7 @@ const T = {
                     {user.resumeAnalysis && (
                       <div style={{ padding: "18px", background: "linear-gradient(to bottom right, #fff, #F8FAFC)", border: "1px solid #E2E8F0", borderRadius: 12, animation: "fadeIn 0.4s ease" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
-                          <div style={{ width: 56, height: 56, borderRadius: 14, background: "linear-gradient(135deg, #10B981, #059669)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 22, fontWeight: 800, boxShadow: "0 4px 12px rgba(16,185,129,0.25)" }}>{user.resumeAnalysis.score}</div>
+                          <div style={{ width: 56, height: 56, borderRadius: 14, background: "linear-gradient(135deg, #10b981, #059669)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 22, fontWeight: 800, boxShadow: "0 4px 12px rgba(16,185,129,0.25)" }}>{user.resumeAnalysis.score}</div>
                           <div>
                             <div style={{ fontWeight: 800, fontSize: 16, color: T.text }}>Resume Strength Score</div>
                             <div style={{ fontSize: 12, color: T.muted, marginTop: 2, background: "#F1F5F9", padding: "4px 8px", borderRadius: 6, display: "inline-block", fontWeight: 600 }}>Target: {user.resumeAnalysis.targetDomain}</div>
@@ -4412,7 +4386,7 @@ const T = {
                       <defs>
                         <linearGradient id="storeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor="#10b981" />
-                          <stop offset="50%" stopColor="#FF7044" />
+                          <stop offset="50%" stopColor="#34d399" />
                           <stop offset="100%" stopColor="#059669" />
                         </linearGradient>
                       </defs>
@@ -5382,7 +5356,7 @@ const T = {
          } catch (e) { return []; }
       };
 
-      const cSuccess = "#10B981";
+      const cSuccess = "#10b981";
       const cWarn = "#F59E0B";
       const cDanger = "#EF4444";
       const mc = p => p >= 70 ? cSuccess : p >= 40 ? cWarn : cDanger;
@@ -5686,7 +5660,7 @@ const T = {
               <div style={{ width: 24, height: 24, background: T.orange, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 <img src="https://www.freelogovectors.net/wp-content/uploads/2025/06/grok_logo-freelogovectors.net_-768x768.png" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
               </div>, T.orange);
-          }} className="btn-press ai-fab" style={{ width: 54, height: 54, borderRadius: "50%", background: `linear-gradient(135deg,${T.orange} 0%,${T.orangeLt} 100%)`, color: "#fff", border: "none", fontSize: 20, boxShadow: `0 8px 28px rgba(16, 185, 129,0.45)`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, overflow: 'hidden' }}>
+          }} className="btn-press ai-fab" style={{ width: 54, height: 54, borderRadius: "50%", background: T.orange, color: "#fff", border: "none", fontSize: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.18)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, overflow: 'hidden' }}>
             <div style={{ width: '100%', height: '100%', background: T.orange, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src="https://www.freelogovectors.net/wp-content/uploads/2025/06/grok_logo-freelogovectors.net_-768x768.png" alt="Grok" style={{ width: '85%', height: '85%', objectFit: 'contain' }} />
             </div>
@@ -6142,7 +6116,7 @@ const T = {
 
                         <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap", background: "#F9FAFB", border: "1px solid #E5E7EB", padding: "8px 10px", borderRadius: 6, alignItems: 'center' }}>
                           <span style={{ fontSize: 12, color: '#4B5563', display: "flex", alignItems: "center", gap: 4 }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#6B7280' }}>schedule</span> <b>{s.deadline}</b></span>
-                          <span style={{ fontSize: 12, color: '#4B5563', display: "flex", alignItems: "center", gap: 4 }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#10B981' }}>payments</span> <b style={{ color: '#10B981' }}>{s.amount}</b></span>
+                          <span style={{ fontSize: 12, color: '#4B5563', display: "flex", alignItems: "center", gap: 4 }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: '#10b981' }}>payments</span> <b style={{ color: '#10b981' }}>{s.amount}</b></span>
                         </div>
 
                         <div style={{ display: "flex", gap: 8 }}>
@@ -6279,7 +6253,7 @@ const T = {
                 ))}
               </div>
 
-              <button onClick={handleApply} disabled={applyingFor.documentsRequired.length !== Object.keys(uploadedDoc).length} style={{ background: applyingFor.documentsRequired.length !== Object.keys(uploadedDoc).length ? T.border : `linear-gradient(135deg,${T.success},#10B981)`, color: applyingFor.documentsRequired.length !== Object.keys(uploadedDoc).length ? T.muted : "#fff", border: "none", borderRadius: 12, padding: "14px", fontSize: 14, fontWeight: 800, cursor: applyingFor.documentsRequired.length !== Object.keys(uploadedDoc).length ? "not-allowed" : "pointer", width: "100%", transition: "all .2s ease" }}>
+              <button onClick={handleApply} disabled={applyingFor.documentsRequired.length !== Object.keys(uploadedDoc).length} style={{ background: applyingFor.documentsRequired.length !== Object.keys(uploadedDoc).length ? T.border : `linear-gradient(135deg,${T.success},#10b981)`, color: applyingFor.documentsRequired.length !== Object.keys(uploadedDoc).length ? T.muted : "#fff", border: "none", borderRadius: 12, padding: "14px", fontSize: 14, fontWeight: 800, cursor: applyingFor.documentsRequired.length !== Object.keys(uploadedDoc).length ? "not-allowed" : "pointer", width: "100%", transition: "all .2s ease" }}>
                 Submit Final Application
               </button>
             </Modal>
@@ -6383,7 +6357,7 @@ const T = {
                     Close Guide
                   </button>
                   <button onClick={() => setActiveGuide(null)}
-                    style={{ flex: 2, background: `linear-gradient(135deg,${T.success},#10B981)`, color: "#fff", border: "none", borderRadius: 12, padding: "12px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 16px rgba(16,185,129,0.30)" }}>
+                    style={{ flex: 2, background: `linear-gradient(135deg,${T.success},#10b981)`, color: "#fff", border: "none", borderRadius: 12, padding: "12px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 16px rgba(16,185,129,0.30)" }}>
                     <span className="material-symbols-outlined" style={{ fontSize: 18 }}>check_circle</span>
                     Mark as Understood
                   </button>
@@ -7047,8 +7021,8 @@ const T = {
       const addToast = useToast();
 
       const mods = [
-        { id: "karya", icon: <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>engineering</span>, title: "Career Compass", sub: "Placement Skill Matcher", c: T.yellow },
-        { id: "hub", icon: <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>account_balance</span>, title: "Scholarship Hub", sub: "Apply & Track Status", c: T.success },
+        { id: "karya", icon: <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>engineering</span>, title: "Career Compass", sub: "Placement Skill Matcher", c: T.orange },
+        { id: "hub", icon: <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>account_balance</span>, title: "Scholarship Hub", sub: "Apply & Track Status", c: T.orange },
         { id: "jobs", icon: <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>work</span>, title: "Jobs, Internships & Hackathons", sub: "Find Jobs, Internships & Hackathons", c: T.orange },
       ];
 
@@ -7123,12 +7097,12 @@ const T = {
           <div className="screen-hero" style={{ padding: "44px 44px 40px" }}>
             <div className="screen-hero-inner">
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(145deg, #1A1A1A, #0D0D0D)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 18px rgba(16, 185, 129,0.25), 0 0 0 1.5px rgba(16, 185, 129,0.35), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: "#111111", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #10b981" }}>
                   <svg width="20" height="20" viewBox="0 0 44 44" fill="none">
                     <defs>
                       <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#10b981" />
-                        <stop offset="50%" stopColor="#FF7044" />
+                        <stop offset="50%" stopColor="#34d399" />
                         <stop offset="100%" stopColor="#059669" />
                       </linearGradient>
                     </defs>
@@ -7146,9 +7120,9 @@ const T = {
               <p style={{ color: T.muted, fontSize: 15 }}>{user.branch || "CSE"} • {user.year || "1st Year"} • AKTU Lucknow</p>
               <div className="home-stats">
                 {stats.map(([i, v, l]) => (
-                  <div key={l} style={{ background: "rgba(16, 185, 129,0.055)", borderRadius: 14, padding: "14px 12px", textAlign: "center", border: "1px solid rgba(16, 185, 129,0.14)", boxShadow: "0 1px 6px rgba(16, 185, 129,0.05)" }}>
-                    <div style={{ fontSize: 22 }}>{i}</div>
-                    <div style={{ fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif', fontSize: 18, fontWeight: 700, color: T.orange, marginTop: 6 }}>{v}</div>
+                  <div key={l} style={{ background: "#FFFFFF", borderRadius: 14, padding: "14px 12px", textAlign: "center", border: "1px solid #EBEBEB" }}>
+                    <div style={{ fontSize: 22, color: T.orange }}>{i}</div>
+                    <div style={{ fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif', fontSize: 18, fontWeight: 700, color: T.text, marginTop: 6 }}>{v}</div>
                     <div style={{ color: T.muted, fontSize: 10, marginTop: 3, lineHeight: 1.3 }}>{l}</div>
                   </div>
                 ))}
@@ -7161,22 +7135,22 @@ const T = {
 
 
             {/* Deadline Alert */}
-            <div style={{ background: "linear-gradient(135deg,rgba(255,199,0,0.13) 0%,rgba(16, 185, 129,0.08) 100%)", borderRadius: 16, padding: "18px 22px", display: "flex", alignItems: "center", gap: 12, border: "1px solid rgba(245,158,11,0.30)", boxShadow: "0 2px 12px rgba(245,158,11,0.10)" }}>
+            <div style={{ background: "rgba(245,158,11,0.12)", borderRadius: 16, padding: "18px 22px", display: "flex", alignItems: "center", gap: 12, border: "1px solid rgba(245,158,11,0.35)" }}>
               <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.28)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>⚠️</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: 14, color: "#92400E", fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif', letterSpacing: "-0.1px" }}>Scholarship Deadline Approaching</div>
-                <div style={{ color: "#78350F", fontSize: 12, marginTop: 3, opacity: 0.82 }}>{deadlineText}</div>
+                <div style={{ color: "#78350F", fontSize: 12, marginTop: 3, lineHeight: 1.45 }}>{deadlineText}</div>
               </div>
-              <button onClick={() => window.open('https://scholarship.up.gov.in/', '_blank')} style={{ background: T.orange, color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 14px rgba(16, 185, 129,0.30)", transition: "all .18s ease" }}>Check Now →</button>
+              <button onClick={() => window.open('https://scholarship.up.gov.in/', '_blank')} style={{ background: T.orange, color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>Check Now →</button>
             </div>
 
             {/* Modules Grid */}
             <div>
-              <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 14, color: "#AAAAAA", letterSpacing: 1.2, textTransform: "uppercase" }}>All Modules</div>
+              <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 14, color: "#888888", letterSpacing: 1.2, textTransform: "uppercase" }}>All Modules</div>
               <div className="home-modules">
                 {mods.map(m => (
-                  <div key={m.id} className="card-hover" onClick={() => go(m.id)} style={{ background: "#FFFFFF", borderRadius: 16, padding: "20px 18px", border: "1px solid #EBEBEB", cursor: "pointer", boxShadow: "0 2px 16px rgba(0,0,0,0.05)", transition: "all .22s cubic-bezier(0.16,1,0.3,1)" }}>
-                    <div className="icon-hover" style={{ width: 46, height: 46, borderRadius: 12, background: m.c + "14", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, marginBottom: 12, border: `1px solid ${m.c}22`, transition: "all .2s ease" }}>{m.icon}</div>
+                  <div key={m.id} className="card-hover" onClick={() => go(m.id)} style={{ background: "#FFFFFF", borderRadius: 16, padding: "20px 18px", border: "1px solid #EBEBEB", cursor: "pointer" }}>
+                    <div className="icon-hover" style={{ width: 46, height: 46, borderRadius: 12, background: m.c + "14", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, marginBottom: 12, border: `1px solid ${m.c}22`, color: m.c, transition: "all .2s ease" }}>{m.icon}</div>
                     <div style={{ fontWeight: 800, fontSize: 14, color: T.text, fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}>{m.title}</div>
                     <div style={{ color: T.muted, fontSize: 12, marginTop: 5 }}>{m.sub}</div>
                   </div>
@@ -7273,7 +7247,7 @@ const T = {
                   <defs>
                     <linearGradient id="sideGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#10b981" />
-                      <stop offset="50%" stopColor="#FF7044" />
+                      <stop offset="50%" stopColor="#34d399" />
                       <stop offset="100%" stopColor="#059669" />
                     </linearGradient>
                   </defs>
@@ -7332,7 +7306,7 @@ const T = {
               <button className="mobile-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
 
               <div className="header-logo-mobile">
-                <div className="brand-logo brand-logo-enhanced" style={{ width: 30, height: 30, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 12px rgba(16, 185, 129,0.2)" }}>
+                <div className="brand-logo brand-logo-enhanced" style={{ width: 30, height: 30, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="16" height="16" viewBox="0 0 44 44" fill="none">
                     <path d="M22 6 L6 14 L22 22 L38 14 Z" fill="#FFFFFF" opacity="0.95" />
                     <path d="M10 18 V28 C10 32 16 36 22 38 C28 36 34 32 34 28 V18" stroke="#FFFFFF" strokeWidth="4" fill="none" strokeLinecap="round" />

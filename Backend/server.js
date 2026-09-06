@@ -24,24 +24,25 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5000',
   'http://localhost:5500',
+  'http://localhost:5501',
   'http://127.0.0.1:5500',
+  'http://127.0.0.1:5501',
   'http://127.0.0.1:3000',
-  null // file:// protocol (local file open)
+  'http://127.0.0.1:5000',
 ];
+
+if (process.env.FRONTEND_URL) {
+  ALLOWED_ORIGINS.push(process.env.FRONTEND_URL.trim());
+}
 
 app.use(cors({
   origin: (origin, callback) => {
-    const envOrigin = process.env.FRONTEND_URL;
-    if (envOrigin) {
-      if (origin === envOrigin) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    } else if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    // Allow non-browser / same-origin tools (no Origin header) and listed frontends
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(null, false);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
