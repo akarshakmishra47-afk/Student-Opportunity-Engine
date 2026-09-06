@@ -1,11 +1,14 @@
 {
-  "buildCommand": "echo 'Static site - no build needed'",
-  "outputDirectory": "Frontend",
-  "trailingSlash": false,
-  "rewrites": [
+  "version": 2,
+  "functions": {
+    "Backend/server.js": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/Backend/server.js"
     }
   ]
 }
