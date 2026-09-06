@@ -182,17 +182,17 @@ router.post('/login', async (req, res) => {
     delete userResponse.resumeText;
     userResponse.isAdmin = isAdmin;
 
-    res.status(200).json({ user: userResponse, accessToken });
+    res.status(200).json({ user: userResponse, accessToken, refreshToken });
   } catch (error) {
     console.error('Login error:', error.message);
     res.status(500).json({ success: false, message: "Login failed. Please try again." });
   }
 });
 
-// GET route /refresh — Bug 4: no fallback secrets
-router.get('/refresh', async (req, res) => {
+// POST/GET route /refresh — supports both cookie and body-based refresh tokens
+const handleRefresh = async (req, res) => {
   try {
-    const token = req.cookies.refreshToken;
+    const token = (req.body && req.body.refreshToken) || (req.cookies && req.cookies.refreshToken);
     if (!token) return res.status(401).json({ success: false, message: "No refresh token" });
 
     const refreshSecret = process.env.JWT_REFRESH_SECRET;
@@ -227,16 +227,18 @@ router.get('/refresh', async (req, res) => {
     delete userResponse.resumeText;
     userResponse.isAdmin = isAdmin;
 
-    res.status(200).json({ user: userResponse, accessToken });
+    res.status(200).json({ user: userResponse, accessToken, refreshToken });
   } catch (error) {
     res.status(401).json({ success: false, message: "Token expired or invalid" });
   }
-});
+};
+router.get('/refresh', handleRefresh);
+router.post('/refresh', handleRefresh);
 
 // POST route /logout — Bug 4: no fallback secrets
 router.post('/logout', async (req, res) => {
   try {
-    const token = req.cookies.refreshToken;
+    const token = (req.body && req.body.refreshToken) || (req.cookies && req.cookies.refreshToken);
     if (token) {
       const refreshSecret = process.env.JWT_REFRESH_SECRET;
       if (refreshSecret) {

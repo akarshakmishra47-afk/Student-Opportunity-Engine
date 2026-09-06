@@ -2034,10 +2034,19 @@
 
       const isApiCall = url.startsWith(API_BASE_URL);
       
-      // 2. Inject credentials if targeting our API
+      // 2. Inject credentials and auth header if targeting our API
       if (isApiCall) {
         if (!(resource instanceof Request)) {
           config.credentials = config.credentials || 'include';
+          const storedToken = localStorage.getItem('vidyasetu_accessToken');
+          if (storedToken) {
+            config.headers = config.headers || {};
+            if (!(config.headers instanceof Headers)) {
+              if (!config.headers.Authorization && !config.headers.authorization) {
+                config.headers.Authorization = `Bearer ${storedToken}`;
+              }
+            }
+          }
         }
       }
       
@@ -2053,8 +2062,17 @@
         if (!isRefreshing) {
           isRefreshing = true;
           refreshPromise = originalFetch(`${API_BASE_URL}/api/users/refresh`, {
+            method: 'POST',
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: localStorage.getItem('vidyasetu_refreshToken') })
+          }).then(async (res) => {
+            if (res.ok) {
+              const data = await res.clone().json();
+              if (data.accessToken) localStorage.setItem('vidyasetu_accessToken', data.accessToken);
+              if (data.refreshToken) localStorage.setItem('vidyasetu_refreshToken', data.refreshToken);
+            }
+            return res;
           }).finally(() => {
             isRefreshing = false;
             refreshPromise = null;
@@ -2064,7 +2082,11 @@
         try {
           const refreshResponse = await refreshPromise;
           if (refreshResponse && refreshResponse.ok) {
-            // 5. Retry exactly once using originalFetch (bypassing interceptor to prevent infinite loops)
+            // 5. Retry with new access token
+            const newToken = localStorage.getItem('vidyasetu_accessToken');
+            if (newToken && config.headers && !(config.headers instanceof Headers)) {
+              config.headers.Authorization = `Bearer ${newToken}`;
+            }
             const retryResponse = await originalFetch(requestForRetry, config);
             
             // If retry fails with 401/403, the session is dead (e.g., token version changed or blocked)
@@ -9308,11 +9330,15 @@ const T = {
             }
 
             const res = await fetch(`${API_BASE_URL}/api/users/refresh`, {
+              method: 'POST',
               credentials: 'include',
-              headers: { 'Content-Type': 'application/json' }
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken: localStorage.getItem('vidyasetu_refreshToken') })
             });
             if (res.ok) {
               const data = await res.json();
+              if (data.accessToken) localStorage.setItem('vidyasetu_accessToken', data.accessToken);
+              if (data.refreshToken) localStorage.setItem('vidyasetu_refreshToken', data.refreshToken);
               if (data.user) {
                 const fetchedData = data.user;
                 const inits = (fetchedData.name || "DK").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
@@ -9347,13 +9373,17 @@ const T = {
         try {
           await fetch(`${API_BASE_URL}/api/users/logout`, {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: localStorage.getItem('vidyasetu_refreshToken') })
           });
         } catch (e) { console.error("Logout API failed", e); }
         finally {
           // Guaranteed local cleanup without destroying unrelated keys
           localStorage.removeItem('vidyasetu_last_activity');
           localStorage.removeItem('studentData');
+          localStorage.removeItem('vidyasetu_accessToken');
+          localStorage.removeItem('vidyasetu_refreshToken');
           localStorage.setItem('vidyasetu_logout', Date.now().toString());
           setIsLoggedIn(false);
           setShowSessionWarning(false);
@@ -9423,8 +9453,17 @@ const T = {
           if (isLoggingOutRef.current) return;
           if (Date.now() - readLast() >= IDLE_MS - WARN_MS) return;
           try {
-            const res = await fetch(`${API_BASE_URL}/api/users/refresh`, { credentials: 'include' });
-            if (res.status === 401 || res.status === 403) performSecureLogout(true);
+            const res = await fetch(`${API_BASE_URL}/api/users/refresh`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken: localStorage.getItem('vidyasetu_refreshToken') })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.accessToken) localStorage.setItem('vidyasetu_accessToken', data.accessToken);
+              if (data.refreshToken) localStorage.setItem('vidyasetu_refreshToken', data.refreshToken);
+            } else if (res.status === 401 || res.status === 403) performSecureLogout(true);
           } catch (e) {}
         }, KEEPALIVE_MS);
 
@@ -9442,6 +9481,8 @@ const T = {
             isLoggingOutRef.current = true;
             localStorage.removeItem('vidyasetu_last_activity');
             localStorage.removeItem('studentData');
+            localStorage.removeItem('vidyasetu_accessToken');
+            localStorage.removeItem('vidyasetu_refreshToken');
             setIsLoggedIn(false);
             setShowSessionWarning(false);
             setUser({});
@@ -9475,8 +9516,17 @@ const T = {
         localStorage.setItem('vidyasetu_last_activity', Date.now().toString());
         setShowSessionWarning(false);
         try {
-          const res = await fetch(`${API_BASE_URL}/api/users/refresh`, { credentials: 'include' });
-          if (res.status === 401 || res.status === 403) performSecureLogout(true);
+          const res = await fetch(`${API_BASE_URL}/api/users/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: localStorage.getItem('vidyasetu_refreshToken') })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.accessToken) localStorage.setItem('vidyasetu_accessToken', data.accessToken);
+            if (data.refreshToken) localStorage.setItem('vidyasetu_refreshToken', data.refreshToken);
+          } else if (res.status === 401 || res.status === 403) performSecureLogout(true);
         } catch (e) {}
       };
 
@@ -9486,6 +9536,8 @@ const T = {
         const fetchedData = data.user || data; 
         setIsLoggedIn(true);
         localStorage.setItem('vidyasetu_last_activity', Date.now().toString());
+        if (data.accessToken) localStorage.setItem('vidyasetu_accessToken', data.accessToken);
+        if (data.refreshToken) localStorage.setItem('vidyasetu_refreshToken', data.refreshToken);
         if (fetchedData) {
           const inits = (fetchedData.name || "DK").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
           const finalUser = {
