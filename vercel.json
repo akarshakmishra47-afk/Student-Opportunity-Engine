@@ -1,14 +1,16 @@
 {
   "version": 2,
+  "buildCommand": "echo Static frontend - no build needed",
+  "outputDirectory": "Frontend",
   "functions": {
     "api/index.js": {
       "runtime": "@vercel/node@5.5.13"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/api/index.js"
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
     }
   ]
 }
