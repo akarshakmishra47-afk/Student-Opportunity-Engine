@@ -19,8 +19,7 @@ const app = express();
 app.use(cookieParser());
 
 const ALLOWED_ORIGINS = [
-  'https://www.vidya-setu.org.in',
-  'https://mini-project-eight-lime.vercel.app',
+  'https://student-opportunity-engine-lyart.vercel.app',
 ];
 
 if (process.env.FRONTEND_URL) {
@@ -76,7 +75,7 @@ if (!mongoURI) {
   process.exit(1);
 }
 
-mongoose.connect(mongoURI)
+const databaseConnection = mongoose.connect(mongoURI)
   .then(() => {
     console.log('✅ Database Connected');
     
@@ -87,6 +86,7 @@ mongoose.connect(mongoURI)
     } catch (error) {
       console.error('⚠️  Failed to initialize job refresh:', error.message);
     }
+    return mongoose.connection;
   })
   .catch(err => {
     console.error('❌ Database Connection Error:');
@@ -94,12 +94,15 @@ mongoose.connect(mongoURI)
     if (require.main === module) {
       process.exit(1);
     }
+    throw err;
   });
 
 if (require.main === module) {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  databaseConnection.then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   });
 }
 
