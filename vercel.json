@@ -1,14 +1,14 @@
 {
   "version": 2,
   "functions": {
-    "Backend/server.js": {
+    "api/index.js": {
       "runtime": "@vercel/node@5.5.13"
     }
   },
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/Backend/server.js"
+      "dest": "/api/index.js"
     }
   ]
 }
