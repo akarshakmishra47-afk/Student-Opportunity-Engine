@@ -21,24 +21,28 @@ app.use(cookieParser());
 const ALLOWED_ORIGINS = [
   'https://www.vidya-setu.org.in',
   'https://mini-project-eight-lime.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5000',
-  'http://localhost:5500',
-  'http://localhost:5501',
-  'http://127.0.0.1:5500',
-  'http://127.0.0.1:5501',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:5000',
 ];
 
 if (process.env.FRONTEND_URL) {
   ALLOWED_ORIGINS.push(process.env.FRONTEND_URL.trim());
 }
 
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  try {
+    const u = new URL(origin);
+    const local = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+    const port = u.port || (u.protocol === 'https:' ? '443' : '80');
+    // Local frontend: React (3000), API preview (5000), Live Server (5500–5599)
+    if (local && (port === '3000' || port === '5000' || /^55\d{2}$/.test(port))) return true;
+  } catch (e) {}
+  return false;
+}
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow non-browser / same-origin tools (no Origin header) and listed frontends
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
       console.warn(`CORS blocked origin: ${origin}`);

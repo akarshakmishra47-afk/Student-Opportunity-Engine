@@ -794,6 +794,18 @@
       gap: 14px;
     }
 
+    .home-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .home-track {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
     /* ── MOBILE BOTTOM NAV ── */
     .mobile-bottom-nav {
       display: none;
@@ -935,7 +947,11 @@
       }
 
       .home-stats {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .home-track {
+        grid-template-columns: 1fr;
       }
 
       .home-modules {
@@ -1005,7 +1021,11 @@
       }
 
       .home-stats {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .home-track {
+        grid-template-columns: 1fr;
       }
 
       .ai-fab {
@@ -1030,7 +1050,11 @@
       }
 
       .home-stats {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .home-track {
+        grid-template-columns: 1fr;
       }
 
       .screen-body {
@@ -6587,7 +6611,14 @@ const T = {
       const [loading, setLoading] = useState(true);
       const [refreshing, setRefreshing] = useState(false);
       const [lastUpdated, setLastUpdated] = useState(null);
-      const [activeTab, setActiveTab] = useState('jobs');
+      const [activeTab, setActiveTab] = useState(() => {
+        try {
+          const t = sessionStorage.getItem('vs_jobs_tab');
+          if (t) sessionStorage.removeItem('vs_jobs_tab');
+          if (t === 'internships' || t === 'hackathons' || t === 'jobs') return t;
+        } catch (e) {}
+        return 'jobs';
+      });
       const [lastRefreshResult, setLastRefreshResult] = useState(null);
       const [showRefreshDetails, setShowRefreshDetails] = useState(false);
 
@@ -7016,9 +7047,10 @@ const T = {
     /* ══════════════════════════════════════
       HOME SCREEN
     ══════════════════════════════════════ */
-    function Home({ go }) {
+    function Home({ go, onOpenProfile }) {
       const { user } = useUser();
       const addToast = useToast();
+      const SAVE_KEY = "vs_saved_opps";
 
       const mods = [
         { id: "karya", icon: <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>engineering</span>, title: "Career Compass", sub: "Placement Skill Matcher", c: T.orange },
@@ -7026,43 +7058,193 @@ const T = {
         { id: "jobs", icon: <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>work</span>, title: "Jobs, Internships & Hackathons", sub: "Find Jobs, Internships & Hackathons", c: T.orange },
       ];
 
-      const [dashCounts, setDashCounts] = React.useState({ scholarships: null, jobs: null });
+      const [dashCounts, setDashCounts] = React.useState({ scholarships: null, internships: null, hackathons: null, competitions: null });
       const [upDeadline, setUpDeadline] = React.useState(null);
       const [loadedDeadline, setLoadedDeadline] = React.useState(false);
+      const [forYou, setForYou] = React.useState([]);
+      const [feedLoading, setFeedLoading] = React.useState(true);
+      const [applications, setApplications] = React.useState([]);
+      const [weekDeadlines, setWeekDeadlines] = React.useState([]);
+      const [saved, setSaved] = React.useState(() => {
+        try { return JSON.parse(localStorage.getItem(SAVE_KEY) || "[]"); } catch (e) { return []; }
+      });
+
+      const parseJobList = (d) => Array.isArray(d) ? d : (Array.isArray(d?.jobs) ? d.jobs : []);
+      const isContest = (j) => /compet|contest|challenge|olympiad|coding/i.test(`${j.title || ""} ${j.category || ""}`);
+
+      const getSignals = () => {
+        const skills = [];
+        if (Array.isArray(user.skills)) skills.push(...user.skills);
+        const ra = user.resumeAnalysis || {};
+        if (Array.isArray(ra.strengths)) skills.push(...ra.strengths.map(s => String(s)));
+        if (ra.targetDomain) skills.push(ra.targetDomain);
+        let role = "";
+        try {
+          const hist = JSON.parse(localStorage.getItem("karyaDishaHistory") || "[]");
+          if (hist.length) role = hist[hist.length - 1].role || "";
+          if (role) skills.push(role);
+        } catch (e) {}
+        return {
+          skills: skills.filter(Boolean),
+          branch: (user.branch || "").toLowerCase(),
+          year: (user.year || "").toLowerCase(),
+          role: role.toLowerCase(),
+          caste: user.casteCategory || "General",
+          income: user.familyIncome || 99999999
+        };
+      };
+
+      const scoreHay = (hay, sig) => {
+        const reasons = [];
+        let score = 8;
+        if (sig.branch && hay.includes(sig.branch)) { score += 22; reasons.push("Matches your branch"); }
+        if (sig.role && hay.includes(sig.role)) { score += 18; reasons.push("Fits your target role"); }
+        sig.skills.forEach(s => {
+          const t = String(s).toLowerCase();
+          if (t.length > 2 && hay.includes(t) && reasons.length < 2) {
+            score += 8;
+            reasons.push("Matches " + t);
+          }
+        });
+        if (/fresher|entry-level|1st|first year|student/i.test(hay) && /1st|first|2nd|second/.test(sig.year)) {
+          score += 8;
+          if (reasons.length < 2) reasons.push("Fits your year");
+        }
+        return { score, why: reasons[0] || ("Picked for " + (user.branch || "your profile")) };
+      };
+
+      const openJobsTab = (tab) => {
+        try { sessionStorage.setItem("vs_jobs_tab", tab); } catch (e) {}
+        go("jobs");
+      };
+
+      const toggleSave = (item, e) => {
+        if (e) e.stopPropagation();
+        setSaved(prev => {
+          const exists = prev.some(x => x.id === item.id);
+          const next = exists ? prev.filter(x => x.id !== item.id) : [{ id: item.id, kind: item.kind, title: item.title, tab: item.tab }, ...prev].slice(0, 20);
+          try { localStorage.setItem(SAVE_KEY, JSON.stringify(next)); } catch (err) {}
+          return next;
+        });
+      };
 
       React.useEffect(() => {
-        // Fetch Scholarships
-        fetch(`${API_BASE_URL}/api/scholarships`)
-          .then(r => r.ok ? r.json() : [])
-          .then(d => {
-            setDashCounts(prev => ({ ...prev, scholarships: Array.isArray(d) ? d.length : 0 }));
-            if (Array.isArray(d)) {
-              // Find the UP Post-Matric scholarship or any matching "UP Post-Matric"
-              const upSch = d.find(s => s.title && s.title.includes("UP Post-Matric"));
-              if (upSch && upSch.deadline) {
-                setUpDeadline(upSch.deadline);
+        let cancelled = false;
+        const load = async () => {
+          setFeedLoading(true);
+          try {
+            const [schRes, stRes, internRes, hackRes, jobRes, appRes] = await Promise.all([
+              fetch(`${API_BASE_URL}/api/scholarships`),
+              fetch(`${API_BASE_URL}/api/jobs/stats`),
+              fetch(`${API_BASE_URL}/api/jobs?primaryType=Internship&limit=24`),
+              fetch(`${API_BASE_URL}/api/jobs?primaryType=Hackathon&limit=24`),
+              fetch(`${API_BASE_URL}/api/jobs?primaryType=Job&limit=24`),
+              user.rollNo ? fetch(`${API_BASE_URL}/api/scholarships/my-applications/${user.rollNo}`) : Promise.resolve(null)
+            ]);
+            const schJson = schRes.ok ? await schRes.json() : [];
+            const scholarships = Array.isArray(schJson) ? schJson : [];
+            const statsJson = stRes.ok ? await stRes.json() : {};
+            const internships = internRes.ok ? parseJobList(await internRes.json()) : [];
+            const hackathons = hackRes.ok ? parseJobList(await hackRes.json()) : [];
+            const jobs = jobRes.ok ? parseJobList(await jobRes.json()) : [];
+            const apps = (appRes && appRes.ok) ? await appRes.json() : [];
+            const contests = [...hackathons, ...internships, ...jobs].filter(isContest);
+            if (cancelled) return;
+
+            const upSch = scholarships.find(s => s.title && s.title.includes("UP Post-Matric"));
+            if (upSch && upSch.deadline) setUpDeadline(upSch.deadline);
+            setLoadedDeadline(true);
+            setDashCounts({
+              scholarships: scholarships.length,
+              internships: statsJson.internships ?? internships.length,
+              hackathons: statsJson.hackathons ?? hackathons.length,
+              competitions: contests.length
+            });
+            setApplications(Array.isArray(apps) ? apps : []);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const week = scholarships.map(s => {
+              const d = new Date(s.deadline);
+              if (isNaN(d.getTime())) return null;
+              d.setHours(0, 0, 0, 0);
+              const days = Math.ceil((d - today) / 86400000);
+              if (days < 0 || days > 7) return null;
+              return { title: s.title, days };
+            }).filter(Boolean).sort((a, b) => a.days - b.days);
+            setWeekDeadlines(week.slice(0, 4));
+
+            const sig = getSignals();
+            const ranked = [];
+            scholarships.forEach(s => {
+              const hay = `${s.title} ${s.provider} ${s.category} ${(s.tags || []).join(" ")} ${s.description || ""}`.toLowerCase();
+              let { score, why } = scoreHay(hay, sig);
+              const el = s.eligibility;
+              if (el) {
+                if (el.allowedCategories && el.allowedCategories.includes(sig.caste)) { score += 12; why = why || "Matches your category"; }
+                if (sig.income <= (el.maxIncome || 99999999)) score += 6;
               }
+              ranked.push({ id: "s-" + s._id, kind: "Scholarship", title: s.title, sub: s.provider || s.category, why, score, tab: "hub", goTo: () => go("hub") });
+            });
+            internships.forEach(j => {
+              const hay = `${j.title} ${j.company} ${j.domain || ""} ${j.branch || ""} ${(j.tags || []).join(" ")} ${j.desc || ""} ${j.experienceLevel || ""}`.toLowerCase();
+              const { score, why } = scoreHay(hay, sig);
+              ranked.push({ id: "i-" + j._id, kind: "Internship", title: j.title, sub: j.company || j.location, why, score, tab: "internships", goTo: () => openJobsTab("internships") });
+            });
+            hackathons.forEach(j => {
+              const hay = `${j.title} ${j.company} ${j.domain || ""} ${(j.tags || []).join(" ")}`.toLowerCase();
+              const extra = isContest(j) ? 6 : 0;
+              const { score, why } = scoreHay(hay, sig);
+              ranked.push({ id: "h-" + j._id, kind: isContest(j) ? "Competition" : "Hackathon", title: j.title, sub: j.company || j.location, why, score: score + extra, tab: "hackathons", goTo: () => openJobsTab("hackathons") });
+            });
+            jobs.filter(j => /project/i.test(j.title || "")).forEach(j => {
+              const hay = `${j.title} ${j.company} ${j.domain || ""}`.toLowerCase();
+              const { score, why } = scoreHay(hay, sig);
+              ranked.push({ id: "p-" + j._id, kind: "Project", title: j.title, sub: j.company, why, score, tab: "jobs", goTo: () => openJobsTab("jobs") });
+            });
+            contests.filter(j => j.primaryType !== "Hackathon").forEach(j => {
+              const hay = `${j.title} ${j.company} ${j.domain || ""}`.toLowerCase();
+              const { score, why } = scoreHay(hay, sig);
+              ranked.push({ id: "c-" + j._id, kind: "Competition", title: j.title, sub: j.company, why, score: score + 4, tab: j.primaryType === "Internship" ? "internships" : "jobs", goTo: () => openJobsTab(j.primaryType === "Internship" ? "internships" : "jobs") });
+            });
+            ranked.sort((a, b) => b.score - a.score);
+            const seen = new Set();
+            const unique = [];
+            for (const item of ranked) {
+              if (seen.has(item.id)) continue;
+              seen.add(item.id);
+              unique.push(item);
+              if (unique.length >= 6) break;
             }
-            setLoadedDeadline(true);
-          })
-          .catch(() => {
-            setDashCounts(prev => ({ ...prev, scholarships: 0 }));
-            setLoadedDeadline(true);
-          });
-
-
-
-        // Fetch Jobs
-        fetch(`${API_BASE_URL}/api/jobs/stats`)
-          .then(r => r.ok ? r.json() : {})
-          .then(d => setDashCounts(prev => ({ ...prev, jobs: d.total ?? 0 })))
-          .catch(() => setDashCounts(prev => ({ ...prev, jobs: 0 })));
-      }, []);
+            setForYou(unique);
+          } catch (e) {
+            if (!cancelled) {
+              setDashCounts({ scholarships: 0, internships: 0, hackathons: 0, competitions: 0 });
+              setLoadedDeadline(true);
+              setForYou([]);
+            }
+          } finally {
+            if (!cancelled) setFeedLoading(false);
+          }
+        };
+        load();
+        return () => { cancelled = true; };
+      }, [user.rollNo, user.branch, user.year]);
 
       const stats = [
-        [<span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>school</span>, dashCounts.scholarships === null ? '…' : dashCounts.scholarships, "Scholarships"],
-        [<span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>work</span>, dashCounts.jobs === null ? '…' : dashCounts.jobs, "Active Jobs"],
+        [<span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>school</span>, dashCounts.scholarships === null ? "…" : dashCounts.scholarships, "Scholarships"],
+        [<span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>badge</span>, dashCounts.internships === null ? "…" : dashCounts.internships, "Internships"],
+        [<span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>emoji_events</span>, dashCounts.hackathons === null ? "…" : dashCounts.hackathons, "Hackathons"],
+        [<span className="material-symbols-outlined" style={{ verticalAlign: 'middle', fontSize: '1.2em' }}>military_tech</span>, dashCounts.competitions === null ? "…" : dashCounts.competitions, "Competitions"],
       ];
+
+      let karyaDone = false;
+      try { karyaDone = JSON.parse(localStorage.getItem("karyaDishaHistory") || "[]").length > 0; } catch (e) {}
+      const missing = [];
+      if (!user.resume) missing.push({ label: "Upload resume", action: onOpenProfile });
+      if (!user.resumeAnalysis) missing.push({ label: "Analyze resume", action: onOpenProfile });
+      if (!karyaDone) missing.push({ label: "Set target role in Career Compass", action: () => go("karya") });
+      if (!user.casteCategory && !user.familyIncome) missing.push({ label: "Add scholarship details", action: onOpenProfile });
 
       // Calculate remaining days from the current date to that deadline dynamically
       let deadlineText = "Loading deadline details…";
@@ -7144,6 +7326,74 @@ const T = {
               <button onClick={() => window.open('https://scholarship.up.gov.in/', '_blank')} style={{ background: T.orange, color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>Check Now →</button>
             </div>
 
+            {missing.length > 0 && (
+              <div style={{ marginTop: 16, background: "#FFFFFF", borderRadius: 16, padding: "16px 18px", border: "1px solid #EBEBEB" }}>
+                <div style={{ fontWeight: 800, fontSize: 13, color: T.text, marginBottom: 8 }}>Complete your profile for better matches</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {missing.map(m => (
+                    <button key={m.label} onClick={m.action} style={{ background: "#F5F5F5", color: T.text, border: "1px solid #EBEBEB", borderRadius: 8, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{m.label}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 22 }}>
+              <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 12, color: "#888888", letterSpacing: 1.2, textTransform: "uppercase" }}>For You</div>
+              {feedLoading && <div style={{ color: T.muted, fontSize: 13 }}>Finding matches…</div>}
+              {!feedLoading && forYou.length === 0 && (
+                <div style={{ background: "#FFFFFF", border: "1px solid #EBEBEB", borderRadius: 14, padding: 18, color: T.muted, fontSize: 13 }}>No personalized matches yet. Open Career Compass or complete your profile, then refresh.</div>
+              )}
+              <div className="home-feed">
+                {forYou.map(item => {
+                  const isSaved = saved.some(s => s.id === item.id);
+                  return (
+                    <div key={item.id} onClick={item.goTo} style={{ background: "#FFFFFF", border: "1px solid #EBEBEB", borderRadius: 14, padding: "14px 16px", cursor: "pointer", display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.orange, marginBottom: 4 }}>{item.kind}</div>
+                        <div style={{ fontWeight: 800, fontSize: 14, color: T.text }}>{item.title}</div>
+                        <div style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>{item.sub}</div>
+                        <div style={{ color: "#555", fontSize: 12, marginTop: 6 }}>{item.why}</div>
+                      </div>
+                      <button onClick={(e) => toggleSave(item, e)} style={{ background: isSaved ? "#10b981" : "#F5F5F5", color: isSaved ? "#fff" : T.text, border: "1px solid #EBEBEB", borderRadius: 8, padding: "6px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>{isSaved ? "Saved" : "Save"}</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 22 }}>
+              <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 12, color: "#888888", letterSpacing: 1.2, textTransform: "uppercase" }}>Your tracker</div>
+              <div className="home-track">
+                <div style={{ background: "#FFFFFF", border: "1px solid #EBEBEB", borderRadius: 14, padding: "16px 18px" }}>
+                  <div style={{ fontWeight: 800, fontSize: 13, color: T.text, marginBottom: 10 }}>Applied</div>
+                  {applications.length === 0 && <div style={{ color: T.muted, fontSize: 12 }}>No scholarship applications yet.</div>}
+                  {applications.slice(0, 4).map((a, i) => (
+                    <div key={a._id || i} onClick={() => go("hub")} style={{ padding: "8px 0", borderTop: i ? "1px solid #F0F0F0" : "none", cursor: "pointer" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{a.scholarshipId?.title || a.title || "Scholarship"}</div>
+                      <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{a.status || a.applicationStatus || "Submitted"}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: "#FFFFFF", border: "1px solid #EBEBEB", borderRadius: 14, padding: "16px 18px" }}>
+                  <div style={{ fontWeight: 800, fontSize: 13, color: T.text, marginBottom: 10 }}>Saved & this week</div>
+                  {saved.slice(0, 3).map(s => (
+                    <div key={s.id} onClick={() => { if (s.tab === "hub") go("hub"); else openJobsTab(s.tab || "jobs"); }} style={{ padding: "8px 0", borderTop: "1px solid #F0F0F0", cursor: "pointer" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.orange }}>{s.kind}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{s.title}</div>
+                    </div>
+                  ))}
+                  {weekDeadlines.map(d => (
+                    <div key={d.title} onClick={() => go("hub")} style={{ padding: "8px 0", borderTop: "1px solid #F0F0F0", cursor: "pointer" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#92400E" }}>Deadline</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{d.title}</div>
+                      <div style={{ fontSize: 11, color: T.muted }}>{d.days === 0 ? "Today" : d.days + " days left"}</div>
+                    </div>
+                  ))}
+                  {saved.length === 0 && weekDeadlines.length === 0 && <div style={{ color: T.muted, fontSize: 12 }}>Save a match or watch deadlines here.</div>}
+                </div>
+              </div>
+            </div>
+
             {/* Modules Grid */}
             <div>
               <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 14, color: "#888888", letterSpacing: 1.2, textTransform: "uppercase" }}>All Modules</div>
@@ -7223,7 +7473,7 @@ const T = {
       const go = t => { window.location.hash = t; if (ref.current) ref.current.scrollTop = 0; setSidebarOpen(false); };
 
       const screens = {
-        home: <Home go={go} />,
+        home: <Home go={go} onOpenProfile={() => setProfileOpen(true)} />,
         hub: <ScholarshipHub />,
         vidya: <VidyaSetu />,
         karya: <KaryaDisha />,
