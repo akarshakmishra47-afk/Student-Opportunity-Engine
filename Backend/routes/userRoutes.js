@@ -133,11 +133,11 @@ const generateTokens = (user) => {
 
   const isAdmin = user.role === 'super_admin';
   const payload = { userId: user._id, rollNo: user.rollNo, isAdmin };
-  const accessToken = jwt.sign(payload, accessSecret, { expiresIn: '5m' });
+  const accessToken = jwt.sign(payload, accessSecret, { expiresIn: '15m' });
   const refreshToken = jwt.sign(
     { userId: user._id, tokenVersion: user.tokenVersion },
     refreshSecret,
-    { expiresIn: '30m' }
+    { expiresIn: '12h' }
   );
   return { accessToken, refreshToken, isAdmin };
 };
@@ -173,8 +173,8 @@ router.post('/login', async (req, res) => {
       maxAge
     });
 
-    res.cookie('accessToken', accessToken, cookieOptions(5 * 60 * 1000));
-    res.cookie('refreshToken', refreshToken, cookieOptions(30 * 60 * 1000));
+    res.cookie('accessToken', accessToken, cookieOptions(15 * 60 * 1000));
+    res.cookie('refreshToken', refreshToken, cookieOptions(12 * 60 * 60 * 1000));
 
     const userResponse = user.toObject();
     delete userResponse.password;
@@ -218,8 +218,8 @@ router.get('/refresh', async (req, res) => {
       maxAge
     });
 
-    res.cookie('accessToken', accessToken, cookieOptions(5 * 60 * 1000));
-    res.cookie('refreshToken', refreshToken, cookieOptions(30 * 60 * 1000));
+    res.cookie('accessToken', accessToken, cookieOptions(15 * 60 * 1000));
+    res.cookie('refreshToken', refreshToken, cookieOptions(12 * 60 * 60 * 1000));
 
     const userResponse = user.toObject();
     delete userResponse.password;

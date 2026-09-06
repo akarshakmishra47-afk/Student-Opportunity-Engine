@@ -9199,27 +9199,28 @@ const T = {
     /* ══════════════════════════════════════
           APP WITH PROVIDERS
         ══════════════════════════════════════ */
-    function SessionWarningModal({ open, onStayLoggedIn, onLogout }) {
+    function SessionWarningModal({ open, secondsLeft, onStayLoggedIn, onLogout }) {
       if (!open) return null;
+      const secs = Math.max(0, secondsLeft || 0);
       return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="modal-sheet" style={{ background: "#fff", width: "90%", maxWidth: 420, borderRadius: 16, padding: 24, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-sheet" style={{ background: "#fff", width: "90%", maxWidth: 420, borderRadius: 16, padding: 24 }}>
             <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20 }}>
               <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(245,158,11,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#F59E0B" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 28 }}>warning</span>
               </div>
               <div>
-                <h3 style={{ fontSize: 18, marginBottom: 8, color: "#111", marginTop: 0 }}>Session Expiring Soon</h3>
+                <h3 style={{ fontSize: 18, marginBottom: 8, color: "#111", marginTop: 0 }}>Still there?</h3>
                 <p style={{ fontSize: 14, color: "#555", lineHeight: 1.5, margin: 0 }}>
-                  Your session is about to expire due to inactivity. You will be logged out in approximately 60 seconds.
+                  You have been idle. You will be logged out in <strong>{secs}</strong> second{secs === 1 ? "" : "s"} to protect your account.
                 </p>
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-              <button onClick={onLogout} style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#fff", color: "#555", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }} className="btn-press">
-                Log Out Now
+              <button onClick={onLogout} style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#fff", color: "#555", fontWeight: 600, cursor: "pointer" }} className="btn-press">
+                Log Out
               </button>
-              <button onClick={onStayLoggedIn} style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#10b981", color: "#fff", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }} className="btn-press">
+              <button onClick={onStayLoggedIn} style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#10b981", color: "#fff", fontWeight: 600, cursor: "pointer" }} className="btn-press">
                 Stay Logged In
               </button>
             </div>
@@ -9234,6 +9235,7 @@ const T = {
       const [isAdmin, setIsAdmin] = useState(false);
       const [sessionChecked, setSessionChecked] = useState(false);
       const [showSessionWarning, setShowSessionWarning] = useState(false);
+      const [sessionSecondsLeft, setSessionSecondsLeft] = useState(120);
       const [user, setUser] = useState(() => {
         // Initialise user state — real hydration happens in useEffect below
         return {
@@ -9322,6 +9324,7 @@ const T = {
                 });
                 setIsAdmin(fetchedData.isAdmin || false);
                 setIsLoggedIn(true);
+                localStorage.setItem('vidyasetu_last_activity', Date.now().toString());
               }
             } else if (!localData) {
               localStorage.removeItem('studentData');
@@ -9350,193 +9353,131 @@ const T = {
         finally {
           // Guaranteed local cleanup without destroying unrelated keys
           localStorage.removeItem('vidyasetu_last_activity');
-          localStorage.removeItem('vidyasetu_tab_active');
           localStorage.removeItem('studentData');
-          sessionStorage.removeItem('vidyasetu_tab_active');
-          
-          // Broadcast logout to other tabs
           localStorage.setItem('vidyasetu_logout', Date.now().toString());
-          
           setIsLoggedIn(false);
           setShowSessionWarning(false);
           setUser({});
           setIsAdmin(false);
-          window.location.href = '/'; 
+          window.location.reload(); 
         }
       };
 
-      // ── SECURE AUTO LOGOUT & KEEP-ALIVE (Production Grade) ──
+      // Idle logout: 30 min no real use, 2 min warning, keep-alive while active
       useEffect(() => {
         if (!isLoggedIn) return;
-        
-        const INACTIVITY_LIMIT_OPEN_TAB_MS = 5 * 60 * 1000; // 5 minutes
-        const WARNING_LIMIT_MS = 4 * 60 * 1000; // 4 minutes
-        const INACTIVITY_LIMIT_CLOSED_TAB_MS = 20 * 60 * 1000; // 20 minutes
+
+        const IDLE_MS = 30 * 60 * 1000;
+        const WARN_MS = 2 * 60 * 1000;
+        const CHECK_MS = 5000;
+        const KEEPALIVE_MS = 10 * 60 * 1000;
         const ACTIVITY_KEY = 'vidyasetu_last_activity';
-        
-        let inactivityChecker = null;
-        let keepAliveInterval = null;
-        let debounceTimer = null;
 
-        // Initialize activity timestamp safely
-        let initialActivity = localStorage.getItem(ACTIVITY_KEY);
-        if (!initialActivity || isNaN(parseInt(initialActivity, 10)) || parseInt(initialActivity, 10) > Date.now()) {
-          initialActivity = Date.now().toString();
-          localStorage.setItem(ACTIVITY_KEY, initialActivity);
-        }
-
-        // Check if we've exceeded the inactivity limit
-        const checkInactivity = (isInitialMount = false) => {
-          if (isLoggingOutRef.current) return false;
-          
-          const rawActivity = localStorage.getItem(ACTIVITY_KEY);
-          if (!rawActivity) return false;
-          
-          let lastActivity = parseInt(rawActivity, 10);
-          
-          if (isNaN(lastActivity)) {
-             // Corrupted string
-             performSecureLogout(true);
-             return true;
-          }
-
-          if (lastActivity > Date.now() + 60000) {
-             // Maliciously set future timestamp or severe clock drift
-             performSecureLogout(true);
-             return true;
-          }
-
-          const timeSinceLastActivity = Date.now() - lastActivity;
-          const isNewTabSession = isInitialMount && !sessionStorage.getItem('vidyasetu_tab_active');
-
-          if (isNewTabSession) {
-            // Tab was closed and is now being reopened
-            if (timeSinceLastActivity >= INACTIVITY_LIMIT_CLOSED_TAB_MS) {
-              performSecureLogout(true);
-              return true;
-            }
-          } else {
-            // Tab is currently open
-            if (timeSinceLastActivity >= INACTIVITY_LIMIT_OPEN_TAB_MS) {
-              performSecureLogout(true); // Silent here, warning handled earlier via modal
-              return true;
-            } else if (timeSinceLastActivity >= WARNING_LIMIT_MS) {
-              setShowSessionWarning(true);
-            } else {
-              setShowSessionWarning(false);
-            }
-          }
-          return false;
+        const readLast = () => {
+          const n = parseInt(localStorage.getItem(ACTIVITY_KEY) || '0', 10);
+          return Number.isFinite(n) && n > 0 ? n : 0;
         };
-        
-        // Immediately check on mount in case they returned after a long time (e.g. from hibernation)
-        if (checkInactivity(true)) return;
-        
-        // If this is a new tab session, reset their activity so they get a fresh 5 minutes
-        if (!sessionStorage.getItem('vidyasetu_tab_active')) {
-          localStorage.setItem(ACTIVITY_KEY, Date.now().toString());
-          sessionStorage.setItem('vidyasetu_tab_active', 'true');
-        }
 
-        // Update the timestamp on interaction (debounced to avoid performance hits)
-        const updateActivity = () => {
+        const touchActivity = () => {
           if (isLoggingOutRef.current) return;
-          
-          const rawActivity = localStorage.getItem(ACTIVITY_KEY);
-          let lastActivity = parseInt(rawActivity || '0', 10);
-          
-          // Allow update if warning is shown, so they can dismiss it by interacting
-          // Only block update if we've completely exceeded the 5 min limit
-          if (!isNaN(lastActivity) && Date.now() - lastActivity >= INACTIVITY_LIMIT_OPEN_TAB_MS) {
-            checkInactivity(false);
+          localStorage.setItem(ACTIVITY_KEY, Date.now().toString());
+          setShowSessionWarning(false);
+        };
+
+        if (!readLast()) touchActivity();
+
+        const checkIdle = () => {
+          if (isLoggingOutRef.current) return;
+          const idleFor = Date.now() - readLast();
+          if (idleFor >= IDLE_MS) {
+            performSecureLogout(true);
             return;
           }
-          
-          if (debounceTimer) return;
-          debounceTimer = setTimeout(() => {
-            localStorage.setItem(ACTIVITY_KEY, Date.now().toString());
-            setShowSessionWarning(false); // Interaction removes warning
-            debounceTimer = null;
-          }, 1000);
+          const remaining = IDLE_MS - idleFor;
+          if (remaining <= WARN_MS) {
+            setSessionSecondsLeft(Math.ceil(remaining / 1000));
+            setShowSessionWarning(true);
+          } else {
+            setShowSessionWarning(false);
+          }
         };
 
-        // Run the inactivity check every 10 seconds
-        inactivityChecker = setInterval(() => checkInactivity(false), 10000);
+        checkIdle();
 
-        // Ping the backend every 4 minutes to keep the session alive ONLY IF active
-        keepAliveInterval = setInterval(async () => {
+        let debounce;
+        const onUse = () => {
           if (isLoggingOutRef.current) return;
-          const rawActivity = localStorage.getItem(ACTIVITY_KEY);
-          let lastActivity = parseInt(rawActivity || '0', 10);
-          // Only extend the session if the user was active recently
-          if (!isNaN(lastActivity) && Date.now() - lastActivity < WARNING_LIMIT_MS) {
-            try {
-              const res = await fetch(`${API_BASE_URL}/api/users/refresh`, { credentials: 'include' });
-              if (res.status === 401 || res.status === 403) {
-                // Backend rejected the session (e.g. expired or revoked)
-                performSecureLogout(true);
-              }
-            } catch (err) { console.error("Keep-alive failed", err); }
+          if (Date.now() - readLast() >= IDLE_MS) {
+            performSecureLogout(true);
+            return;
           }
-        }, 4 * 60 * 1000);
-
-        // Listen for modern events to track activity accurately and without duplicates
-        const events = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
-        events.forEach(e => window.addEventListener(e, updateActivity, { passive: true }));
-        
-        // Listen for visibility change (e.g. returning from sleep or switching tabs back)
-        const handleVisibilityChange = () => {
-          if (document.visibilityState === 'visible') {
-            checkInactivity(false);
-          }
+          if (debounce) return;
+          debounce = setTimeout(() => {
+            touchActivity();
+            debounce = null;
+          }, 1500);
         };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        // Multi-tab session synchronization
-        const handleStorage = (e) => {
+        const idleTimer = setInterval(checkIdle, CHECK_MS);
+        const keepAlive = setInterval(async () => {
+          if (isLoggingOutRef.current) return;
+          if (Date.now() - readLast() >= IDLE_MS - WARN_MS) return;
+          try {
+            const res = await fetch(`${API_BASE_URL}/api/users/refresh`, { credentials: 'include' });
+            if (res.status === 401 || res.status === 403) performSecureLogout(true);
+          } catch (e) {}
+        }, KEEPALIVE_MS);
+
+        const useEvents = ['pointerdown', 'keydown', 'touchstart'];
+        useEvents.forEach(ev => window.addEventListener(ev, onUse, { passive: true }));
+
+        const onVisible = () => {
+          if (document.visibilityState === 'visible') checkIdle();
+        };
+        document.addEventListener('visibilitychange', onVisible);
+
+        const onStorage = (e) => {
           if (e.key === 'vidyasetu_logout') {
-            if (!isLoggingOutRef.current) {
-              isLoggingOutRef.current = true;
-              localStorage.removeItem('vidyasetu_last_activity');
-              localStorage.removeItem('vidyasetu_tab_active');
-              localStorage.removeItem('studentData');
-              setIsLoggedIn(false);
-              setShowSessionWarning(false);
-              setUser({});
-              setIsAdmin(false);
-              window.location.href = '/';
-            }
+            if (isLoggingOutRef.current) return;
+            isLoggingOutRef.current = true;
+            localStorage.removeItem('vidyasetu_last_activity');
+            localStorage.removeItem('studentData');
+            setIsLoggedIn(false);
+            setShowSessionWarning(false);
+            setUser({});
+            setIsAdmin(false);
+            window.location.reload();
           } else if (e.key === ACTIVITY_KEY) {
-            checkInactivity(false);
+            checkIdle();
           }
         };
-        window.addEventListener('storage', handleStorage);
+        window.addEventListener('storage', onStorage);
 
-        // Listen for forced logout from 401 global fetch wrapper
-        const handleForceLogout = () => {
-          performSecureLogout(true);
-        };
-        window.addEventListener('vidyasetu_force_logout', handleForceLogout);
+        const onForceLogout = () => performSecureLogout(true);
+        window.addEventListener('vidyasetu_force_logout', onForceLogout);
 
         return () => {
-          if (inactivityChecker) clearInterval(inactivityChecker);
-          if (keepAliveInterval) clearInterval(keepAliveInterval);
-          if (debounceTimer) clearTimeout(debounceTimer);
-          events.forEach(e => window.removeEventListener(e, updateActivity));
-          document.removeEventListener('visibilitychange', handleVisibilityChange);
-          window.removeEventListener('storage', handleStorage);
-          window.removeEventListener('vidyasetu_force_logout', handleForceLogout);
+          clearInterval(idleTimer);
+          clearInterval(keepAlive);
+          if (debounce) clearTimeout(debounce);
+          useEvents.forEach(ev => window.removeEventListener(ev, onUse));
+          document.removeEventListener('visibilitychange', onVisible);
+          window.removeEventListener('storage', onStorage);
+          window.removeEventListener('vidyasetu_force_logout', onForceLogout);
         };
       }, [isLoggedIn]);
 
-      // ── LOGOUT: Shared manual and auto logout flow ──
       const handleLogout = () => {
         performSecureLogout(true);
       };
 
-      const handleStayLoggedIn = () => {
+      const handleStayLoggedIn = async () => {
         localStorage.setItem('vidyasetu_last_activity', Date.now().toString());
         setShowSessionWarning(false);
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/users/refresh`, { credentials: 'include' });
+          if (res.status === 401 || res.status === 403) performSecureLogout(true);
+        } catch (e) {}
       };
 
       if (!splashDone || !sessionChecked) return <SplashScreen onDone={() => setSplashDone(true)} />;
@@ -9544,6 +9485,7 @@ const T = {
       if (!isLoggedIn) return <Login onLogin={(data) => {
         const fetchedData = data.user || data; 
         setIsLoggedIn(true);
+        localStorage.setItem('vidyasetu_last_activity', Date.now().toString());
         if (fetchedData) {
           const inits = (fetchedData.name || "DK").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
           const finalUser = {
@@ -9562,7 +9504,7 @@ const T = {
       if (isAdmin) {
         return (
           <ToastContext.Provider value={addToast}>
-            <SessionWarningModal open={showSessionWarning} onStayLoggedIn={handleStayLoggedIn} onLogout={handleLogout} />
+            <SessionWarningModal open={showSessionWarning} secondsLeft={sessionSecondsLeft} onStayLoggedIn={handleStayLoggedIn} onLogout={handleLogout} />
             <AdminDashboard onLogout={handleLogout} />
             <ToastSystem toasts={toasts} />
           </ToastContext.Provider>
@@ -9572,7 +9514,7 @@ const T = {
       return (
         <UserContext.Provider value={{ user, updateUser, refreshUser }}>
           <ToastContext.Provider value={addToast}>
-            <SessionWarningModal open={showSessionWarning} onStayLoggedIn={handleStayLoggedIn} onLogout={handleLogout} />
+            <SessionWarningModal open={showSessionWarning} secondsLeft={sessionSecondsLeft} onStayLoggedIn={handleStayLoggedIn} onLogout={handleLogout} />
             <App onLogout={handleLogout} />
             <ToastSystem toasts={toasts} />
           </ToastContext.Provider>
