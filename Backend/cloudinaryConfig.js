@@ -19,9 +19,10 @@ async function uploadImage(base64Data) {
       ? base64Data
       : `data:image/jpeg;base64,${base64Data}`;
 
-    // Use unsigned upload - bypasses signature issues entirely
-    const result = await cloudinary.uploader.unsigned_upload(dataUri, 'vidya_setu', {
-      resource_type: 'image'
+    // Use signed upload with API key + secret (server-side)
+    const result = await cloudinary.uploader.upload(dataUri, {
+      resource_type: 'image',
+      folder: 'vidya_setu'
     });
 
     return result.secure_url;
