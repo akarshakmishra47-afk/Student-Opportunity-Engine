@@ -131,4 +131,10 @@ const jobSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+// ── Compound Indexes for Fast Filtering & Sorting ────────────────────────────
+jobSchema.index({ isActive: 1, primaryType: 1, createdAt: -1 });
+jobSchema.index({ isActive: 1, category: 1, createdAt: -1 });
+jobSchema.index({ isActive: 1, branch: 1, createdAt: -1 });
+jobSchema.index({ isActive: 1, isIndiaLocation: 1 });
+
 module.exports = mongoose.model('Job', jobSchema);

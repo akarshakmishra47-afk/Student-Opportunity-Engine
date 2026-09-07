@@ -1,8 +1,15 @@
-require('dotenv').config();
-const dns = require('dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+
+// Only override DNS if explicitly requested
+if (process.env.USE_GOOGLE_DNS === 'true') {
+  const dns = require('dns');
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+}
 
 const express = require('express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
@@ -16,11 +23,39 @@ const aiRoutes = require('./routes/aiRoutes');
 const communityRoutes = require('./routes/communityRoutes');
 
 const app = express();
+
+// Trust reverse proxy for correct IP resolution on Render / Vercel
+app.set('trust proxy', 1);
+
+// Security Headers
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
 app.use(cookieParser());
 
+// Rate Limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 600,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
+});
+app.use('/api/', globalLimiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many authentication attempts, please try again after 15 minutes' }
+});
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/register', authLimiter);
+
 const ALLOWED_ORIGINS = [
-  'https://www.vidya-setu.org.in',
-  'https://mini-project-eight-lime.vercel.app',
+  'https://student-opportunity-engine-lyart.vercel.app',
 ];
 
 if (process.env.FRONTEND_URL) {
@@ -29,9 +64,13 @@ if (process.env.FRONTEND_URL) {
 
 function isAllowedOrigin(origin) {
   if (!origin) return true;
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  const cleanOrigin = origin.replace(/\/+$/, '');
+  if (ALLOWED_ORIGINS.includes(cleanOrigin) || ALLOWED_ORIGINS.includes(origin)) return true;
   try {
-    const u = new URL(origin);
+    const u = new URL(cleanOrigin);
+    if (u.protocol === 'https:' && u.hostname.endsWith('.vercel.app')) {
+      return true;
+    }
     const local = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
     const port = u.port || (u.protocol === 'https:' ? '443' : '80');
     // Local frontend: React (3000), API preview (5000), Live Server (5500–5599)
@@ -52,8 +91,15 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
 }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Health check endpoint for Render / monitoring
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
 app.use('/api/users', userRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/perks', perkRoutes);
@@ -67,6 +113,15 @@ app.use('/api/community', communityRoutes);
 app.use((err, req, res, next) => {
   console.error('Unhandled Error:', err.stack);
   res.status(500).json({ success: false, message: 'Internal Server Error' });
+});
+
+// Process-level crash prevention
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception thrown:', err);
 });
 
 const mongoURI = process.env.MONGO_URI ? process.env.MONGO_URI.trim() : null;
@@ -93,7 +148,12 @@ mongoose.connect(mongoURI)
     console.error(err.message);
   });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
+

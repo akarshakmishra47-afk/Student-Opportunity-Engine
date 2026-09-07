@@ -240,16 +240,27 @@ router.post('/logout', async (req, res) => {
     if (token) {
       const refreshSecret = process.env.JWT_REFRESH_SECRET;
       if (refreshSecret) {
-        const payload = jwt.verify(token, refreshSecret, { ignoreExpiration: true });
-        await User.findByIdAndUpdate(payload.userId, { $inc: { tokenVersion: 1 } });
+        try {
+          const payload = jwt.verify(token, refreshSecret, { ignoreExpiration: true });
+          await User.findByIdAndUpdate(payload.userId, { $inc: { tokenVersion: 1 } });
+        } catch (e) {
+          // ignore verification errors on logout
+        }
       }
     }
-  } catch (e) {
-    // ignore verification errors on logout
+    const isProduction = process.env.NODE_ENV === 'production';
+    const clearOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/'
+    };
+    res.clearCookie('accessToken', clearOptions);
+    res.clearCookie('refreshToken', clearOptions);
+    res.status(200).json({ success: true, message: "Logged out" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Logout failed" });
   }
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
-  res.status(200).json({ message: "Logged out" });
 });
 
 // FORGOT PASSWORD: Get security question — Bug 6: rate limit, generic messages
