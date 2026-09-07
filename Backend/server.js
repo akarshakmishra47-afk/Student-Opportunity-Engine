@@ -19,7 +19,8 @@ const app = express();
 app.use(cookieParser());
 
 const ALLOWED_ORIGINS = [
-  'https://student-opportunity-engine-lyart.vercel.app',
+  'https://www.vidya-setu.org.in',
+  'https://mini-project-eight-lime.vercel.app',
 ];
 
 if (process.env.FRONTEND_URL) {
@@ -68,14 +69,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 
-const mongoURI = (process.env.MONGO_URI || process.env.MONGODB_URI || '').trim() || null;
+const mongoURI = process.env.MONGO_URI ? process.env.MONGO_URI.trim() : null;
 
 if (!mongoURI) {
   console.error("❌ ERROR: MONGO_URI is missing in your .env file!");
   process.exit(1);
 }
 
-const databaseConnection = mongoose.connect(mongoURI)
+mongoose.connect(mongoURI)
   .then(() => {
     console.log('✅ Database Connected');
     
@@ -86,24 +87,13 @@ const databaseConnection = mongoose.connect(mongoURI)
     } catch (error) {
       console.error('⚠️  Failed to initialize job refresh:', error.message);
     }
-    return mongoose.connection;
   })
   .catch(err => {
     console.error('❌ Database Connection Error:');
     console.error(err.message);
-    if (require.main === module) {
-      process.exit(1);
-    }
-    throw err;
   });
 
-if (require.main === module) {
-  const PORT = process.env.PORT || 5000;
-  databaseConnection.then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  });
-}
-
-module.exports = app;
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
