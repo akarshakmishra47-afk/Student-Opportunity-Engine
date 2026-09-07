@@ -165,7 +165,7 @@ router.post('/login', async (req, res) => {
 
     const { accessToken, refreshToken, isAdmin } = generateTokens(user);
 
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.FRONTEND_URL?.startsWith('https://');
     const cookieOptions = (maxAge) => ({
       httpOnly: true,
       secure: isProduction,
@@ -210,7 +210,7 @@ router.get('/refresh', async (req, res) => {
 
     const { accessToken, refreshToken, isAdmin } = generateTokens(user);
 
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.FRONTEND_URL?.startsWith('https://');
     const cookieOptions = (maxAge) => ({
       httpOnly: true,
       secure: isProduction,
@@ -248,7 +248,7 @@ router.post('/logout', async (req, res) => {
         }
       }
     }
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.FRONTEND_URL?.startsWith('https://');
     const clearOptions = {
       httpOnly: true,
       secure: isProduction,

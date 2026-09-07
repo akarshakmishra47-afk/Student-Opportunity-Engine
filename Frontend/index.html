@@ -2007,6 +2007,13 @@
     const API_BASE_URL = isLocal
       ? `http://${window.location.hostname}:5000`
       : 'https://student-opportunity-engine-t5uf.onrender.com';
+    const ACCESS_TOKEN_KEY = 'vidyasetu_access_token';
+
+    const saveAccessToken = (token) => {
+      if (token) localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    };
+
+    const clearAccessToken = () => localStorage.removeItem(ACCESS_TOKEN_KEY);
 
     // Global fetch override to always send credentials (cookies) to the API
     let isRefreshing = false;
@@ -2039,6 +2046,13 @@
         if (!(resource instanceof Request)) {
           config.credentials = config.credentials || 'include';
         }
+        const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+        if (accessToken) {
+          config.headers = {
+            ...(config.headers || {}),
+            Authorization: `Bearer ${accessToken}`
+          };
+        }
       }
       
       // 3. First execution
@@ -2064,8 +2078,18 @@
         try {
           const refreshResponse = await refreshPromise;
           if (refreshResponse && refreshResponse.ok) {
+            const refreshData = await refreshResponse.clone().json().catch(() => null);
+            saveAccessToken(refreshData && refreshData.accessToken);
             // 5. Retry exactly once using originalFetch (bypassing interceptor to prevent infinite loops)
-            const retryResponse = await originalFetch(requestForRetry, config);
+            const retryConfig = { ...config };
+            const refreshedToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+            if (refreshedToken) {
+              retryConfig.headers = {
+                ...(retryConfig.headers || {}),
+                Authorization: `Bearer ${refreshedToken}`
+              };
+            }
+            const retryResponse = await originalFetch(requestForRetry, retryConfig);
             
             // If retry fails with 401/403, the session is dead (e.g., token version changed or blocked)
             if (retryResponse.status === 401 || retryResponse.status === 403) {
@@ -7684,6 +7708,7 @@ const T = {
           if (res.ok) {
             const data = await res.json();
             if (data && data.user && data.user.rollNo) {
+              saveAccessToken(data.accessToken);
               const userWithEmail = { ...data.user, email: data.user.email || (email.includes('@') ? email : data.user.email || "") };
               onLogin({ ...data, user: userWithEmail });
             }
@@ -9352,6 +9377,7 @@ const T = {
         } catch (e) { console.error("Logout API failed", e); }
         finally {
           // Guaranteed local cleanup without destroying unrelated keys
+          clearAccessToken();
           localStorage.removeItem('vidyasetu_last_activity');
           localStorage.removeItem('studentData');
           localStorage.setItem('vidyasetu_logout', Date.now().toString());
